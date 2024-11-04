@@ -1,8 +1,9 @@
 from models import User, db
 from sqlalchemy.exc import IntegrityError
 from email_validator import validate_email, EmailNotValidError
-# Импортируем email-validator
+import logging
 
+logger = logging.getLogger(__name__)
 
 class UserManager:
 
@@ -11,19 +12,16 @@ class UserManager:
         if not data or 'username' not in data or 'password' not in data or 'email' not in data:
             raise ValueError("Missing required fields")
 
-        # Валидация email
         try:
             valid_email = validate_email(data['email'])
-            email = valid_email.email  # Получаем нормализованный email
+            email = valid_email.email
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email address: {str(e)}")
 
-        # Проверка на существование пользователя с таким же именем
         existing_user = User.query.filter_by(username=data['username']).first()
         if existing_user:
             raise ValueError("Username already taken")
 
-        # Проверка на существование пользователя с таким же email
         existing_email = User.query.filter_by(email=email).first()
         if existing_email:
             raise ValueError("Email already registered")
@@ -40,9 +38,8 @@ class UserManager:
             raise Exception("An error occurred during registration")
 
     @staticmethod
-    def authenticate_user(username, password):
-        user = User.query.filter_by(username=username).first()
+    def authenticate_user(email, password):
+        user = User.query.filter_by(email=email).first()
         if user is None or not user.verify_password(password):
-            raise ValueError("Bad username or password")
-
+            raise ValueError("Bad email or password")
         return user

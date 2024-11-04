@@ -1,3 +1,4 @@
+# api/activities.py
 from flask import jsonify, request, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User
