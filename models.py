@@ -5,7 +5,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Инициализация SQLAlchemy
 db = SQLAlchemy()
 
-
 class User(db.Model):
   __tablename__ = 'user'  # Явное указание имени таблицы
 
