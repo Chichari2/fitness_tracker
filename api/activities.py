@@ -52,5 +52,5 @@ def delete_activity(user_id, activity_id):
         abort(403, description="Access forbidden")
 
     ActivityManager.delete_activity(user_id, activity_id)
-    return jsonify({"message": "Activity удалена успешно"}), 200
+    return jsonify({"message": "Activity deleted"}), 200
 
