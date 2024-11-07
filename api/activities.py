@@ -25,7 +25,11 @@ def add_user_activity(user_id):
     user = User.query.get_or_404(user_id)
     data = request.get_json()
     new_activity = ActivityManager.create_activity(user.id, data)
-    return jsonify(new_activity.to_dict()), 201
+    # Include activity ID in the response if not already included in `to_dict()`
+    return jsonify({
+        "activity_id": new_activity.id,  # Ensure `id` is accessible
+        **new_activity.to_dict()  # Include all other fields from `to_dict()`
+    }), 201
 
 # Маршрут для обновления активности
 @api_bp.route('/users/<int:user_id>/activities/<int:activity_id>', methods=['PUT'])
