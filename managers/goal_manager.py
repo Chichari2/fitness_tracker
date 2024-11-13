@@ -1,4 +1,4 @@
-from models import Goal, db
+from models import Goal, Activity, db
 from datetime import datetime
 import logging
 
@@ -11,10 +11,10 @@ class GoalManager:
         try:
             new_goal = Goal(
                 user_id=user_id,
-                name=data.get('activity_type', 'Unnamed Activity'),  # Используем activity_type как name
-                value=data['target_value'],                           # Используем target_value как value
-                start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),  # Преобразуем строку в дату
-                end_date=datetime.strptime(data['end_date'], '%Y-%m-%d')       # Преобразуем строку в дату
+                name=data.get('activity_type', 'General Goal'),  # Default to "General Goal" if activity_type is missing
+                value=data['target_value'],  # Use target_value from request
+                start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
+                end_date=datetime.strptime(data['end_date'], '%Y-%m-%d')
             )
             db.session.add(new_goal)
             db.session.commit()
@@ -25,31 +25,22 @@ class GoalManager:
             raise
 
     @staticmethod
-    def get_user_goals(user_id):
+    def get_user_goal(user_id):
         try:
-            return Goal.query.filter_by(user_id=user_id).all()
+            return Goal.query.filter_by(user_id=user_id).first()  # Only one goal per user
         except Exception as e:
-            logger.error(f"Error fetching goals for user {user_id}: {str(e)}")
+            logger.error(f"Error fetching goal for user {user_id}: {str(e)}")
             raise
 
     @staticmethod
-    def update_goal(user_id, goal_id, data):
+    def calculate_goal_progress(user_id, goal_value):
         try:
-            goal = Goal.query.filter_by(user_id=user_id, id=goal_id).first_or_404()
-
-            if 'activity_type' in data:
-                goal.name = data['activity_type']
-            if 'target_value' in data:
-                goal.value = data['target_value']
-            if 'end_date' in data:
-                goal.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d')
-
-            goal.last_update_date = datetime.utcnow()
-            db.session.commit()
-            return goal
+            total_distance = db.session.query(db.func.sum(Activity.distance_meters)).filter_by(user_id=user_id).scalar()
+            if total_distance is None:
+                total_distance = 0
+            return round((total_distance / goal_value) * 100, 2)
         except Exception as e:
-            logger.error(f"Error in update_goal: {str(e)}")
-            db.session.rollback()
+            logger.error(f"Error calculating progress for user {user_id}: {str(e)}")
             raise
 
     @staticmethod
@@ -62,4 +53,3 @@ class GoalManager:
             logger.error(f"Error in delete_goal: {str(e)}")
             db.session.rollback()
             raise
-
